@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Node-RED na prática | Aula de IoT</title>
+<meta name="description" content="Aula-atividade de Node-RED para IoT: o que é, instalação passo a passo pelo PowerShell e três atividades práticas.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔴</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#E9EDF0;
+  --paper:#FFFFFF;
+  --ink:#1E2B36;
+  --muted:#53616C;
+  --line:#C9D1D7;
+  --red:#A3171F;
+  --red-dark:#7D1017;
+  --ps:#012456;
+  --ps-text:#EEF2F7;
+  --inject:#A6BBCF;
+  --function:#FDD0A2;
+  --switch:#E2D96E;
+  --debug:#87A980;
+  --dash:#9DD5E8;
+  --ok:#3E8E41;
+  --sans:"Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --mono:"IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;font-family:var(--sans);font-size:18px;line-height:1.6;color:var(--ink);
+  background-color:var(--canvas);
+  background-image:
+    linear-gradient(to right, rgba(30,43,54,.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30,43,54,.06) 1px, transparent 1px);
+  background-size:20px 20px;
+}
+a{color:var(--red)}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #1A73E8;outline-offset:2px}
+
+/* Barra superior */
+.topbar{
+  position:sticky;top:0;z-index:10;background:#8F0000;color:#fff;
+  display:flex;align-items:center;gap:16px;padding:10px 20px;
+}
+.topbar strong{font-size:17px}
+.progress{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:15px}
+.meter{width:120px;height:8px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
+.meter span{display:block;height:100%;width:0;background:#fff;transition:width .3s}
+
+/* Abertura */
+header.hero{max-width:1100px;margin:0 auto;padding:56px 20px 24px}
+.hero h1{font-size:clamp(40px,7vw,72px);line-height:1.02;margin:0 0 12px;letter-spacing:-.02em}
+.hero p.lead{font-size:21px;max-width:44ch;margin:0 0 32px;color:var(--muted)}
+.flow-nav{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}
+.flow-nav svg{display:block;min-width:880px;width:100%;height:auto}
+.flow-nav .hint{font-size:15px;color:var(--muted);margin:6px 4px 0}
+.fn-node{cursor:pointer}
+.fn-node rect.body{stroke:#999;stroke-width:1}
+.fn-node:hover rect.body,.fn-node:focus rect.body{stroke:var(--red);stroke-width:2}
+.fn-node text{font-family:var(--sans);font-size:14px;fill:#333}
+.fn-status{opacity:0;transition:opacity .3s}
+.fn-status.on{opacity:1}
+
+/* Conteúdo */
+main{max-width:820px;margin:0 auto;padding:0 20px 80px}
+section.part{
+  background:var(--paper);border:1px solid var(--line);border-radius:8px;
+  padding:36px clamp(20px,5vw,48px);margin-top:36px;
+}
+.part-tag{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.part-tag i{width:14px;height:14px;border-radius:3px;border:1px solid #999;display:inline-block}
+h2{font-size:clamp(30px,4.5vw,40px);line-height:1.1;margin:0 0 16px;letter-spacing:-.01em}
+h3{font-size:24px;line-height:1.25;margin:36px 0 10px}
+p,li{max-width:68ch}
+code{font-family:var(--mono);font-size:.88em;background:#EEF1F3;border:1px solid #DCE2E6;border-radius:4px;padding:1px 5px}
+kbd{font-family:var(--sans);font-size:.85em;border:1px solid #B8C1C8;border-bottom-width:3px;border-radius:5px;padding:0 6px;background:#fff;white-space:nowrap}
+
+/* Glossário */
+dl.terms{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;margin:20px 0}
+dl.terms dt{font-weight:700}
+dl.terms dd{margin:0}
+@media (max-width:560px){dl.terms{grid-template-columns:1fr}dl.terms dd{margin-bottom:8px}}
+
+/* Passos numerados */
+ol.steps{list-style:none;counter-reset:s;padding:0;margin:24px 0}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 28px 56px;border-left:2px solid var(--line);margin-left:18px}
+ol.steps>li:last-child{border-left-color:transparent;padding-bottom:0}
+ol.steps>li::before{
+  content:counter(s);position:absolute;left:-19px;top:-4px;width:36px;height:36px;border-radius:50%;
+  background:var(--red);color:#fff;font-weight:700;display:grid;place-items:center;font-size:17px;
+}
+ol.steps>li>h4{font-size:20px;margin:0 0 6px;line-height:1.3}
+ol.steps>li>h4+p{margin-top:0}
+
+/* Terminal PowerShell */
+.ps{background:var(--ps);color:var(--ps-text);border-radius:6px;margin:12px 0;position:relative;font-family:var(--mono);font-size:15px}
+.ps .bar{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 14px;border-bottom:1px solid rgba(255,255,255,.12);font-family:var(--sans);font-size:13px;color:#A9B8CC}
+.ps pre{margin:0;padding:14px 16px;overflow-x:auto;white-space:pre}
+.ps .prompt{color:#7FA6D6;user-select:none}
+.ps.output pre{color:#C9D6E6}
+.copy{
+  font-family:var(--sans);font-size:14px;font-weight:700;border:0;border-radius:4px;cursor:pointer;
+  background:#fff;color:var(--ps);padding:5px 12px;
+}
+.copy.done{background:#7CD992}
+
+/* Caixas de aviso */
+.note{border-left:5px solid;border-radius:0 6px 6px 0;padding:12px 16px;margin:16px 0;background:#F6F8F9}
+.note p{margin:4px 0}
+.note.tip{border-color:#2F7DBF;background:#EEF5FB}
+.note.warn{border-color:#C98A00;background:#FDF6E3}
+.note.ok{border-color:var(--ok);background:#EEF7EE}
+.note b.k{display:block}
+
+/* Mini-fluxos das atividades */
+.flow{display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;padding:16px 4px;margin:8px 0 16px}
+.fnode{
+  flex:none;display:inline-flex;align-items:center;gap:8px;border:1px solid #999;border-radius:5px;
+  padding:7px 12px 7px 0;font-size:15px;white-space:nowrap;position:relative
+}
+.fnode::before{content:"";width:22px;align-self:stretch;margin:-7px 0;background:rgba(0,0,0,.07);border-right:1px solid rgba(0,0,0,.12);border-radius:5px 0 0 5px}
+.fnode.split{flex-direction:column;align-items:flex-start;gap:0}
+.wire{flex:none;width:34px;height:2px;background:#888}
+.branch{display:flex;flex-direction:column;gap:10px}
+.branch .row{display:flex;align-items:center}
+.c-inject{background:var(--inject)}.c-function{background:var(--function)}.c-switch{background:var(--switch)}
+.c-debug{background:var(--debug)}.c-dash{background:var(--dash)}
+
+/* Editor de exemplo */
+.editor-mock{border:2px solid #7C8891;border-radius:6px;overflow:hidden;font-size:14px;margin:20px 0;background:#fff}
+.em-top{background:#8F0000;color:#fff;display:flex;align-items:center;gap:10px;padding:8px 10px}
+.em-top .deploy{margin-left:auto;background:#AD1625;border:1px solid #fff;border-radius:3px;padding:2px 10px}
+.em-body{display:grid;grid-template-columns:1fr 2.4fr 1.3fr;min-height:200px}
+.em-body>div{padding:10px;position:relative}
+.em-pal{background:#F3F3F3;border-right:1px solid #ccc}
+.em-pal span{display:block;margin:6px 0;padding:3px 6px;border:1px solid #999;border-radius:4px;font-size:13px}
+.em-work{background-image:linear-gradient(to right,#eee 1px,transparent 1px),linear-gradient(#eee 1px,transparent 1px);background-size:16px 16px}
+.em-side{background:#F3F3F3;border-left:1px solid #ccc}
+.badge{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#1A73E8;color:#fff;font-weight:700;font-size:13px;flex:none}
+.em-body .badge{position:absolute;top:8px;right:8px}
+.legend{list-style:none;padding:0}
+.legend li{display:flex;gap:12px;align-items:flex-start;margin:10px 0}
+
+/* Código de fluxo para importar */
+details.json{margin:12px 0;border:1px solid var(--line);border-radius:6px;background:#F8FAFB}
+details.json summary{cursor:pointer;padding:10px 14px;font-weight:700}
+details.json pre{margin:0;padding:14px;max-height:280px;overflow:auto;font-family:var(--mono);font-size:13px;white-space:pre-wrap;word-break:break-all;border-top:1px solid var(--line)}
+details.json .actions{padding:10px 14px;border-top:1px solid var(--line)}
+details.json .copy{background:var(--ps);color:#fff}
+
+/* Problemas */
+details.fix{border-bottom:1px solid var(--line);padding:12px 0}
+details.fix summary{cursor:pointer;font-weight:700}
+details.fix p{margin:8px 0 0}
+
+/* Concluí */
+label.done{
+  display:flex;align-items:center;gap:12px;margin-top:32px;padding:14px 16px;border:2px dashed var(--line);
+  border-radius:8px;cursor:pointer;font-weight:700
+}
+label.done input{width:22px;height:22px;accent-color:var(--ok)}
+label.done:has(input:checked){border-style:solid;border-color:var(--ok);background:#EEF7EE}
+
+.challenge{border:2px solid var(--ink);border-radius:8px;padding:16px 20px;margin-top:24px}
+.challenge h4{margin:0 0 6px;font-size:19px}
+
+ol.questions{padding-left:28px;margin:16px 0}
+ol.questions li{margin:0 0 14px;padding-left:6px}
+ol.questions li::marker{font-weight:700;color:var(--red)}
+.copy-dark{background:var(--ps);color:#fff;padding:8px 14px;font-size:15px}
+.muted{color:var(--muted);font-size:15px}
+ul.checklist{list-style:none;padding:0;margin:8px 0 0}
+ul.checklist li{padding-left:30px;position:relative;margin:6px 0}
+ul.checklist li::before{content:"";position:absolute;left:0;top:4px;width:18px;height:18px;border:2px solid var(--ink);border-radius:3px}
+
+footer{text-align:center;color:var(--muted);font-size:15px;padding:0 20px 40px}
+
+@media (max-width:640px){
+  body{font-size:17px}
+  .em-body{grid-template-columns:1fr}
+  .em-pal,.em-side{border:0;border-bottom:1px solid #ccc}
+  .meter{width:70px}
+  .topbar strong{font-size:15px}
+}
+@media print{
+  .topbar,.flow-nav,label.done,.copy{display:none}
+  body{background:#fff}
+  section.part{border:0;padding:0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar" role="banner">
+  <strong>Node-RED na prática</strong>
+  <div class="progress" aria-live="polite">
+    <span id="progText">0 de 7 etapas</span>
+    <div class="meter" aria-hidden="true"><span id="progBar"></span></div>
+  </div>
+</div>
+
+<header class="hero">
+  <h1>Node-RED na prática</h1>
+  <p class="lead">Aula de IoT: do zero até um painel que mostra os dados de um sensor em tempo real.</p>
+
+  <div class="flow-nav">
+    <svg id="flowSvg" viewBox="0 0 1220 190" role="navigation" aria-label="Etapas da aula"></svg>
+    <p class="hint">Este é o roteiro da aula, desenhado como um fluxo do Node-RED. Clique em um bloco para ir até a etapa. Quando você concluir uma etapa, aparece um pontinho verde embaixo dela.</p>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ PARTE 1 ============ -->
+<section class="part" id="oque">
+  <div class="part-tag"><i style="background:var(--inject)"></i>Etapa 1</div>
+  <h2>O que é o Node-RED e para que serve</h2>
+
+  <p>O <b>Node-RED</b> é uma ferramenta gratuita para criar programas <b>arrastando blocos e ligando eles com fios</b>, em vez de escrever muitas linhas de código. Ele foi criado na IBM em 2013, é de código aberto e roda direto no navegador (Chrome, Edge, Firefox).</p>
+
+  <p>Pense numa <b>linha de montagem</b>: a peça entra numa ponta, passa por várias máquinas e cada máquina faz um trabalho. No Node-RED, a “peça” é uma <b>mensagem</b> com dados (por exemplo, a temperatura de um sensor), e cada máquina é um <b>bloco</b> que faz alguma coisa com ela.</p>
+
+  <div class="flow" aria-label="Exemplo de fluxo: sensor, regra, ação">
+    <span class="fnode c-inject">Sensor envia 32 °C</span><span class="wire"></span>
+    <span class="fnode c-switch">Está acima de 30?</span><span class="wire"></span>
+    <span class="fnode c-debug">Liga o ventilador</span>
+  </div>
+
+  <h3>As 5 palavras que você vai usar a aula toda</h3>
+  <dl class="terms">
+    <dt>Nó (node)</dt><dd>Cada bloquinho colorido. Um nó faz uma única tarefa: gerar um dado, fazer uma conta, mostrar o resultado…</dd>
+    <dt>Fio</dt><dd>A linha que liga um nó ao outro. É por ele que a mensagem viaja, sempre da esquerda para a direita.</dd>
+    <dt>Fluxo (flow)</dt><dd>O conjunto de nós ligados por fios. É o seu “programa”.</dd>
+    <dt>Mensagem (msg)</dt><dd>O pacote de dados que passa pelos fios. O valor principal fica guardado em <code>msg.payload</code> (payload = “carga”).</dd>
+    <dt>Deploy (Implementar)</dt><dd>O botão vermelho que <b>salva e coloca o fluxo para funcionar</b>. Mudou alguma coisa? Clique em Deploy, senão a mudança não vale.</dd>
+  </dl>
+
+  <h3>E onde entra a IoT?</h3>
+  <p>IoT (Internet das Coisas) é ligar objetos do dia a dia à internet: sensores, lâmpadas, motores, câmeras. O problema é que esses objetos falam “línguas” diferentes e alguém precisa juntar tudo. O Node-RED faz esse papel de <b>central</b>. Com ele dá para:</p>
+  <ul>
+    <li><b>Receber dados</b> de placas como ESP32, Arduino e Raspberry Pi (por MQTT, HTTP, porta serial…).</li>
+    <li><b>Criar regras</b>: “se a umidade do solo ficar baixa, liga a bomba d’água”.</li>
+    <li><b>Montar painéis</b> com gráficos e botões, que abrem até no celular.</li>
+    <li><b>Enviar alertas</b> por e-mail, Telegram ou WhatsApp, e <b>guardar dados</b> em planilhas ou bancos de dados.</li>
+  </ul>
+  <p>Exemplos reais: estufa inteligente, casa automatizada, monitoramento de máquinas numa fábrica, estação meteorológica da escola.</p>
+
+  <label class="done"><input type="checkbox" data-step="oque"> Concluí esta etapa</label>
+</section>
+
+<!-- ============ PARTE 2 ============ -->
+<section class="part" id="instalar">
+  <div class="part-tag"><i style="background:var(--function)"></i>Etapa 2</div>
+  <h2>Ligando o Node-RED com o Docker</h2>
+
+  <p>Em vez de instalar o Node-RED peça por peça, vamos usar o <b>Docker</b>. Ele roda programas dentro de uma “caixa” pronta, chamada <b>contêiner</b>. É como uma marmita: já vem tudo montado, é só esquentar.</p>
+  <p>Vamos usar a caixa oficial do Node-RED (a <b>imagem</b> <code>nodered/node-red</code>). Na primeira vez, leva uns 5 a 10 minutos.</p>
+
+  <div class="note tip">
+    <b class="k">Como funciona o copiar e colar aqui</b>
+    <p>Cada comando aparece numa caixa azul igual à janela do PowerShell. Clique em <b>Copiar</b>, vá até o PowerShell, cole com <kbd>Ctrl</kbd> + <kbd>V</kbd> (ou clique com o botão direito do mouse) e aperte <kbd>Enter</kbd>. O trecho <span style="font-family:var(--mono)">PS C:\Users\aluno&gt;</span> é só o começo da linha que o PowerShell já mostra; ele não é copiado.</p>
+  </div>
+
+  <ol class="steps">
+    <li>
+      <h4>Abra o Docker Desktop</h4>
+      <p>Aperte a tecla <kbd>⊞ Windows</kbd>, digite <b>Docker Desktop</b> e abra. Espere até aparecer, no canto inferior esquerdo da janela dele, <b>Engine running</b> (motor ligado). Pode levar 1 ou 2 minutos. Se pedir login, clique em <b>Skip</b> (pular).</p>
+      <p>Deixe o Docker Desktop aberto (pode minimizar) durante toda a aula.</p>
+    </li>
+    <li>
+      <h4>Abra o PowerShell</h4>
+      <p>Aperte <kbd>⊞ Windows</kbd>, digite <b>PowerShell</b> e clique em <b>Windows PowerShell</b>. Vai abrir uma janela azul (ou preta) com um cursor piscando. É nela que vamos digitar os comandos.</p>
+    </li>
+    <li>
+      <h4>Teste se o Docker está funcionando</h4>
+      <div class="ps"><div class="bar">PowerShell<button class="copy" data-copy="docker run --rm hello-world">Copiar</button></div>
+<pre><span class="prompt">PS C:\Users\aluno&gt; </span>docker run --rm hello-world</pre></div>
+      <p>Se aparecer <b>Hello from Docker!</b>, está tudo certo. Se der erro, veja a lista de problemas no fim desta etapa.</p>
+    </li>
+    <li>
+      <h4>Baixe e ligue o Node-RED</h4>
+      <div class="ps"><div class="bar">PowerShell<button class="copy" data-copy="docker run -d -p 1880:1880 -v node_red_data:/data --name meu-node-red nodered/node-red">Copiar</button></div>
+<pre><span class="prompt">PS C:\Users\aluno&gt; </span>docker run -d -p 1880:1880 -v node_red_data:/data --name meu-node-red nodered/node-red</pre></div>
+      <p>Na primeira vez ele baixa a imagem (uns 2 a 5 minutos). No fim aparece uma linha comprida de letras e números: é o código do contêiner, sinal de que deu certo.</p>
+      <p>O que cada parte do comando faz:</p>
+      <dl class="terms">
+        <dt><code>docker run</code></dt><dd>Cria e liga um contêiner novo.</dd>
+        <dt><code>-d</code></dt><dd>Roda “em segundo plano”: você pode fechar o PowerShell que o Node-RED continua ligado.</dd>
+        <dt><code>-p 1880:1880</code></dt><dd>Abre a porta 1880, para o navegador conseguir acessar o Node-RED.</dd>
+        <dt><code>-v node_red_data:/data</code></dt><dd>Cria uma “gaveta” chamada <i>node_red_data</i> onde seus fluxos ficam guardados, mesmo se o contêiner for desligado.</dd>
+        <dt><code>--name meu-node-red</code></dt><dd>Dá um nome para o contêiner, para ligar e desligar depois.</dd>
+        <dt><code>nodered/node-red</code></dt><dd>A imagem oficial do Node-RED, baixada do Docker Hub.</dd>
+      </dl>
+    </li>
+    <li>
+      <h4>Confira se ele está rodando</h4>
+      <div class="ps"><div class="bar">PowerShell<button class="copy" data-copy="docker ps">Copiar</button></div>
+<pre><span class="prompt">PS C:\Users\aluno&gt; </span>docker ps</pre></div>
+      <p>Deve aparecer uma linha com o nome <b>meu-node-red</b> e, na coluna STATUS, algo como <b>Up 30 seconds</b> (ligado há 30 segundos). Ele também aparece no Docker Desktop, na aba <b>Containers</b>, com uma bolinha verde.</p>
+    </li>
+    <li>
+      <h4>Abra o Node-RED no navegador</h4>
+      <p>Abra o Chrome, Edge ou Firefox e digite na barra de endereço:</p>
+      <div class="ps"><div class="bar">Endereço do navegador<button class="copy" data-copy="http://127.0.0.1:1880">Copiar</button></div>
+<pre>http://127.0.0.1:1880</pre></div>
+      <p>Também funciona com <code>localhost:1880</code>. Vai aparecer a tela do Node-RED, com uma faixa vermelha no alto. Conseguiu? Então está tudo pronto! ✅</p>
+    </li>
+    <li>
+      <h4>Como desligar e ligar de novo</h4>
+      <p>O <code>docker run</code> é só para a <b>primeira vez</b>. Depois disso, use estes comandos:</p>
+      <div class="ps"><div class="bar">Desligar<button class="copy" data-copy="docker stop meu-node-red">Copiar</button></div>
+<pre><span class="prompt">PS C:\Users\aluno&gt; </span>docker stop meu-node-red</pre></div>
+      <div class="ps"><div class="bar">Ligar de novo (outra aula)<button class="copy" data-copy="docker start meu-node-red">Copiar</button></div>
+<pre><span class="prompt">PS C:\Users\aluno&gt; </span>docker start meu-node-red</pre></div>
+      <p>Na próxima aula: abra o Docker Desktop, espere o <b>Engine running</b> e rode o <code>docker start</code>. Seus fluxos continuam lá, guardados na gaveta <i>node_red_data</i>.</p>
+      <div class="note warn">
+        <b class="k">O computador foi “resetado” e o contêiner sumiu?</b>
+        <p>Se o <code>docker start</code> disser que <i>meu-node-red</i> não existe, rode de novo o <code>docker run</code> do passo 4 e importe o seu <code>flows.json</code> (veja a Etapa 7) para recuperar os fluxos.</p>
+      </div>
+    </li>
+  </ol>
+
+  <h3 id="problemas">Deu algum erro? Procure aqui</h3>
+  <details class="fix">
+    <summary>“docker” não é reconhecido</summary>
+    <p>O Docker Desktop não está instalado neste computador. Avise o professor e troque de máquina.</p>
+  </details>
+  <details class="fix">
+    <summary>“error during connect” ou “docker_engine: O sistema não pode encontrar o arquivo”</summary>
+    <p>O Docker Desktop está fechado ou ainda iniciando. Abra-o e espere aparecer <b>Engine running</b>, depois tente de novo.</p>
+  </details>
+  <details class="fix">
+    <summary>“permission denied” ou “acesso negado” ao rodar docker</summary>
+    <p>Seu usuário não tem permissão para usar o Docker neste computador. Avise o professor.</p>
+  </details>
+  <details class="fix">
+    <summary>“The container name "/meu-node-red" is already in use”</summary>
+    <p>O contêiner já foi criado antes. Em vez do <code>docker run</code>, use <code>docker start meu-node-red</code>.</p>
+  </details>
+  <details class="fix">
+    <summary>“port is already allocated” (porta já em uso)</summary>
+    <p>Já tem outro Node-RED usando a porta 1880. Rode <code>docker ps</code> para ver se o seu já está ligado (se estiver, é só abrir o navegador). Se for outro programa, troque <code>-p 1880:1880</code> por <code>-p 1881:1880</code> no <code>docker run</code> e acesse <code>http://127.0.0.1:1881</code>.</p>
+  </details>
+  <details class="fix">
+    <summary>O navegador diz “não é possível acessar esse site”</summary>
+    <p>Rode <code>docker ps</code>. Se o <i>meu-node-red</i> não aparecer, ligue com <code>docker start meu-node-red</code>. Se aparecer, espere uns 20 segundos (ele pode estar iniciando) e recarregue a página. Para ver as mensagens internas do Node-RED, use <code>docker logs meu-node-red</code>.</p>
+  </details>
+  <details class="fix">
+    <summary>“pull access denied” ou “repository does not exist”</summary>
+    <p>O nome da imagem foi digitado errado. Use o botão <b>Copiar</b> do passo 4 em vez de digitar.</p>
+  </details>
+
+  <label class="done"><input type="checkbox" data-step="instalar"> Concluí esta etapa</label>
+</section>
+
+<!-- ============ PARTE 3 ============ -->
+<section class="part" id="tela">
+  <div class="part-tag"><i style="background:var(--switch)"></i>Etapa 3</div>
+  <h2>Conhecendo a tela do Node-RED</h2>
+  <p>Antes de montar o primeiro fluxo, vale conhecer as quatro áreas da tela. O desenho abaixo é uma versão simplificada do que você está vendo no navegador:</p>
+
+  <div class="editor-mock" aria-hidden="true">
+    <div class="em-top"><b>Node-RED</b><span class="badge">D</span><span class="deploy">Implementar ▾</span><span>☰</span></div>
+    <div class="em-body">
+      <div class="em-pal"><span class="badge">A</span><small>filtrar nós</small>
+        <span style="background:var(--inject)">inject</span>
+        <span style="background:var(--debug)">debug</span>
+        <span style="background:var(--function)">function</span>
+        <span style="background:var(--switch)">switch</span>
+      </div>
+      <div class="em-work"><span class="badge">B</span><small>Fluxo 1</small></div>
+      <div class="em-side"><span class="badge">C</span><small>🐞 depuração</small></div>
+    </div>
+  </div>
+
+  <ul class="legend">
+    <li><span class="badge">A</span><div><b>Paleta de nós</b> (esquerda): todos os blocos disponíveis. No alto tem uma caixinha de busca: digite o nome do nó (por exemplo <i>debug</i>) para achar rápido.</div></li>
+    <li><span class="badge">B</span><div><b>Área de trabalho</b> (centro): o quadriculado onde você solta e liga os nós. Cada aba no topo (Fluxo 1, Fluxo 2…) é uma folha diferente.</div></li>
+    <li><span class="badge">C</span><div><b>Barra lateral</b> (direita): mostra informações. A aba mais usada é a de <b>depuração</b>, com o ícone de inseto 🐞, onde aparecem as mensagens.</div></li>
+    <li><span class="badge">D</span><div><b>Botão Implementar/Deploy</b> e <b>menu ☰</b> (canto superior direito): o botão vermelho coloca o fluxo para funcionar; o menu tem opções como Importar e Gerenciar paleta.</div></li>
+  </ul>
+
+  <h3>Movimentos básicos</h3>
+  <dl class="terms">
+    <dt>Colocar um nó</dt><dd>Arraste da paleta e solte na área de trabalho.</dd>
+    <dt>Ligar dois nós</dt><dd>Clique na bolinha cinza do lado <b>direito</b> de um nó, segure e arraste até a bolinha do lado <b>esquerdo</b> do outro.</dd>
+    <dt>Configurar</dt><dd>Dê <b>duplo clique</b> no nó. Ao terminar, clique em <b>Concluído</b> (Done).</dd>
+    <dt>Apagar</dt><dd>Clique no nó ou no fio e aperte <kbd>Delete</kbd>.</dd>
+    <dt>Desfazer</dt><dd><kbd>Ctrl</kbd> + <kbd>Z</kbd>.</dd>
+  </dl>
+
+  <h3 id="importar">Como importar um fluxo pronto</h3>
+  <p>Cada atividade tem um código de fluxo pronto. Use se travar em algum passo ou quiser conferir sua resposta:</p>
+  <ol>
+    <li>Clique em <b>Copiar fluxo</b> na atividade.</li>
+    <li>No Node-RED, abra o menu <b>☰</b> e escolha <b>Importar</b> (ou aperte <kbd>Ctrl</kbd> + <kbd>I</kbd>).</li>
+    <li>Cole o código na caixa grande (<kbd>Ctrl</kbd> + <kbd>V</kbd>) e clique em <b>Importar</b>.</li>
+    <li>Os nós ficam “grudados” no mouse: clique na área de trabalho para soltar.</li>
+    <li>Clique em <b>Implementar/Deploy</b>.</li>
+  </ol>
+
+  <label class="done"><input type="checkbox" data-step="tela"> Concluí esta etapa</label>
+</section>
+
+<!-- ============ ATIVIDADE 1 ============ -->
+<section class="part" id="a1">
+  <div class="part-tag"><i style="background:var(--debug)"></i>Etapa 4</div>
+  <h2>Atividade 1: Meu primeiro fluxo</h2>
+  <p><b>Objetivo:</b> entender como uma mensagem nasce, passa por um fio e aparece na tela. Tempo estimado: 15 minutos.</p>
+
+  <div class="flow" aria-label="Fluxo: inject, function, debug">
+    <span class="fnode c-inject">inject: Clique aqui</span><span class="wire"></span>
+    <span class="fnode c-function">function: Maiúsculas</span><span class="wire"></span>
+    <span class="fnode c-debug">debug: Ver mensagem</span>
+  </div>
+
+  <ol class="steps">
+    <li>
+      <h4>Coloque os dois primeiros nós</h4>
+      <p>Na busca da paleta, digite <b>inject</b> e arraste o nó azul para a área de trabalho. Depois busque <b>debug</b> e arraste o nó verde para a direita dele.</p>
+      <p>O <b>inject</b> é um botão que cria uma mensagem. O <b>debug</b> mostra a mensagem na barra lateral.</p>
+    </li>
+    <li>
+      <h4>Ligue os nós com um fio</h4>
+      <p>Arraste da bolinha da direita do <i>inject</i> até a bolinha da esquerda do <i>debug</i>. Deve aparecer uma linha cinza ligando os dois.</p>
+    </li>
+    <li>
+      <h4>Clique em Implementar/Deploy</h4>
+      <p>Depois abra a aba de depuração 🐞 na barra lateral direita.</p>
+    </li>
+    <li>
+      <h4>Aperte o botão do inject</h4>
+      <p>Clique no quadradinho que fica do lado <b>esquerdo</b> do nó inject. Na aba 🐞 aparece um número enorme, tipo <code>1790000000000</code>.</p>
+      <div class="note tip"><p>Esse número é a data e hora atual, contada em milissegundos desde 1970. É assim que os computadores medem o tempo!</p></div>
+    </li>
+    <li>
+      <h4>Troque a mensagem por um texto</h4>
+      <p>Dê duplo clique no inject. Na linha <code>msg.payload</code>, clique na setinha do tipo e escolha <b>texto</b> (ícone <b>a<sub>z</sub></b>). Escreva <code>Olá, IoT!</code>. No campo Nome escreva <code>Clique aqui</code>. Clique em <b>Concluído</b>, depois em <b>Deploy</b>, e aperte o botão de novo.</p>
+    </li>
+    <li>
+      <h4>Coloque um nó function no meio</h4>
+      <p>Clique no fio e aperte <kbd>Delete</kbd> para apagá-lo. Busque o nó <b>function</b> (laranja) e coloque entre os dois. Ligue: <b>inject → function → debug</b>.</p>
+      <p>Dê duplo clique no function, dê o nome <code>Maiúsculas</code> e, na aba <b>Ao receber mensagem</b> (On Message), apague o que tiver e cole:</p>
+      <div class="ps"><div class="bar">Código do nó function (JavaScript)<button class="copy" data-copy="msg.payload = msg.payload.toUpperCase();&#10;return msg;">Copiar</button></div>
+<pre>msg.payload = msg.payload.toUpperCase();
+return msg;</pre></div>
+      <p>Tradução: “pegue o texto da mensagem, transforme em letras maiúsculas e mande adiante”.</p>
+    </li>
+    <li>
+      <h4>Teste</h4>
+      <p>Deploy, clique no botão do inject e olhe a aba 🐞.</p>
+      <div class="note ok"><b class="k">Resultado esperado</b><p>Aparece <code>"OLÁ, IOT!"</code> na aba de depuração.</p></div>
+    </li>
+  </ol>
+
+  <details class="json">
+    <summary>Ver o fluxo pronto da Atividade 1</summary>
+<pre id="flow-a1">[{"id":"1a00000000000001","type":"inject","name":"Clique aqui","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"Olá, IoT!","payloadType":"str","x":150,"y":100,"wires":[["1a00000000000002"]]},{"id":"1a00000000000002","type":"function","name":"Maiúsculas","func":"msg.payload = msg.payload.toUpperCase();\nreturn msg;","outputs":1,"timeout":0,"noerr":0,"initialize":"","finalize":"","libs":[],"x":340,"y":100,"wires":[["1a00000000000003"]]},{"id":"1a00000000000003","type":"debug","name":"Ver mensagem","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"payload","targetType":"msg","statusVal":"","statusType":"auto","x":540,"y":100,"wires":[]}]</pre>
+    <div class="actions"><button class="copy" data-copy-from="flow-a1">Copiar fluxo</button></div>
+  </details>
+
+  <div class="challenge">
+    <h4>Desafio</h4>
+    <p>Mude o código do function para que a mensagem final seja <code>OLÁ, IOT! - Turma de IoT 2026</code>. Dica: em JavaScript, juntamos textos com o sinal <code>+</code>.</p>
+    <p>Onde mudar: dê duplo clique no nó <b>Maiúsculas</b>, aba <b>Ao receber mensagem</b>. Depois clique em <b>Concluído</b>, <b>Deploy</b> e aperte o botão do inject.</p>
+    <details class="json">
+      <summary>Ver a resposta (tente antes!)</summary>
+      <div style="padding:4px 14px 14px">
+        <div class="ps"><div class="bar">Código do nó function<button class="copy" data-copy="msg.payload = msg.payload.toUpperCase() + &quot; - Turma de IoT 2026&quot;;&#10;return msg;">Copiar</button></div>
+<pre>msg.payload = msg.payload.toUpperCase() + " - Turma de IoT 2026";
+return msg;</pre></div>
+        <p>Resultado na aba 🐞: <code>"OLÁ, IOT! - Turma de IoT 2026"</code></p>
+        <div class="note tip">
+          <b class="k">A ordem importa!</b>
+          <p>O <code>.toUpperCase()</code> vem <b>antes</b> do <code>+</code>, então só o “Olá, IoT!” vira maiúsculo. Agora compare com este código, que junta os textos primeiro e só depois transforma tudo:</p>
+        </div>
+        <div class="ps"><div class="bar">Outra forma (resultado diferente)<button class="copy" data-copy="msg.payload = (msg.payload + &quot; - Turma de IoT 2026&quot;).toUpperCase();&#10;return msg;">Copiar</button></div>
+<pre>msg.payload = (msg.payload + " - Turma de IoT 2026").toUpperCase();
+return msg;</pre></div>
+        <p>Resultado: <code>"OLÁ, IOT! - TURMA DE IOT 2026"</code>, tudo em maiúsculas. Teste os dois e veja a diferença: o computador sempre segue a ordem exata que você escreveu.</p>
+      </div>
+    </details>
+  </div>
+
+  <label class="done"><input type="checkbox" data-step="a1"> Concluí esta etapa</label>
+</section>
+
+<!-- ============ ATIVIDADE 2 ============ -->
+<section class="part" id="a2">
+  <div class="part-tag"><i style="background:var(--debug)"></i>Etapa 5</div>
+  <h2>Atividade 2: Sensor de temperatura simulado</h2>
+  <p><b>Objetivo:</b> criar um “sensor de mentirinha” que manda uma temperatura a cada 2 segundos, e uma regra que separa temperaturas normais das quentes. Tempo estimado: 25 minutos.</p>
+  <p>Por que simular? Porque assim dá para aprender a lógica sem precisar de nenhuma placa ou sensor físico. Depois, é só trocar o simulador por um sensor de verdade.</p>
+
+  <div class="flow" aria-label="Fluxo: inject a cada 2 segundos, function sensor, switch, dois debug">
+    <span class="fnode c-inject">A cada 2 segundos</span><span class="wire"></span>
+    <span class="fnode c-function">Sensor de temperatura</span><span class="wire"></span>
+    <span class="fnode c-switch">Está quente?</span><span class="wire"></span>
+    <div class="branch">
+      <div class="row"><span class="fnode c-debug">🔥 Quente</span></div>
+      <div class="row"><span class="fnode c-debug">✅ Normal</span></div>
+    </div>
+  </div>
+
+  <ol class="steps">
+    <li>
+      <h4>Crie uma aba nova</h4>
+      <p>Clique no <b>+</b> ao lado da aba “Fluxo 1”. Assim a atividade 2 fica separada da 1.</p>
+    </li>
+    <li>
+      <h4>Faça o inject disparar sozinho</h4>
+      <p>Arraste um <b>inject</b> e dê duplo clique. Em <b>Repetir</b> (Repeat), escolha <b>intervalo</b> e coloque <b>a cada 2 segundos</b>. Marque também <b>Injetar uma vez após 1 segundo</b>. Nome: <code>A cada 2 segundos</code>. Concluído.</p>
+    </li>
+    <li>
+      <h4>Crie o sensor</h4>
+      <p>Arraste um <b>function</b>, ligue depois do inject, dê o nome <code>Sensor de temperatura</code> e cole este código:</p>
+      <div class="ps"><div class="bar">Código do nó function<button class="copy" data-copy="// Gera uma temperatura aleatória entre 20 e 35 °C&#10;let temperatura = 20 + Math.random() * 15;&#10;&#10;// Arredonda para 1 casa decimal&#10;msg.payload = Math.round(temperatura * 10) / 10;&#10;msg.topic = &quot;temperatura&quot;;&#10;return msg;">Copiar</button></div>
+<pre>// Gera uma temperatura aleatória entre 20 e 35 °C
+let temperatura = 20 + Math.random() * 15;
+
+// Arredonda para 1 casa decimal
+msg.payload = Math.round(temperatura * 10) / 10;
+msg.topic = "temperatura";
+return msg;</pre></div>
+      <p>As linhas que começam com <code>//</code> são comentários: explicações para humanos, o computador ignora.</p>
+    </li>
+    <li>
+      <h4>Crie a regra com o nó switch</h4>
+      <p>O <b>switch</b> (amarelo) funciona como uma bifurcação na estrada: ele manda a mensagem para um caminho ou outro, dependendo de uma condição.</p>
+      <p>Arraste um <b>switch</b>, ligue depois do sensor e dê duplo clique. Nome: <code>Está quente?</code>. Na primeira regra, escolha <b>&gt;</b> e digite <b>30</b> (tipo número, ícone <b>0<sub>9</sub></b>). Clique em <b>+ adicionar</b> no rodapé e, na nova regra, escolha <b>caso contrário</b> (otherwise). Concluído.</p>
+      <p>Repare que agora o switch tem <b>duas bolinhas de saída</b>: a de cima é “maior que 30”, a de baixo é “o resto”.</p>
+    </li>
+    <li>
+      <h4>Coloque um debug em cada saída</h4>
+      <p>Arraste dois nós <b>debug</b>. Ligue a saída de cima a um deles e dê o nome <code>🔥 Quente</code>. Ligue a saída de baixo ao outro e dê o nome <code>✅ Normal</code>.</p>
+    </li>
+    <li>
+      <h4>Implemente e observe</h4>
+      <p>Clique em Deploy e abra a aba 🐞. A cada 2 segundos chega uma temperatura, e o nome do debug mostra se ela foi para o caminho “Quente” ou “Normal”.</p>
+      <div class="note ok"><b class="k">Resultado esperado</b><p>Temperaturas como <code>32.4</code> aparecem com o nome <b>🔥 Quente</b>; temperaturas como <code>24.1</code> aparecem com <b>✅ Normal</b>.</p></div>
+      <div class="note tip"><p>As mensagens vão encher a tela. Para pausar, clique no quadradinho verde do lado direito de cada nó debug (ele desliga aquele debug) e clique em Deploy. Para limpar a aba 🐞, use o ícone de lixeira.</p></div>
+    </li>
+  </ol>
+
+  <details class="json">
+    <summary>Ver o fluxo pronto da Atividade 2</summary>
+<pre id="flow-a2">[{"id":"2a00000000000001","type":"inject","name":"A cada 2 segundos","props":[{"p":"payload"}],"repeat":"2","crontab":"","once":true,"onceDelay":"1","topic":"","payload":"","payloadType":"date","x":160,"y":200,"wires":[["2a00000000000002"]]},{"id":"2a00000000000002","type":"function","name":"Sensor de temperatura","func":"// Gera uma temperatura aleatória entre 20 e 35 °C\nlet temperatura = 20 + Math.random() * 15;\n\n// Arredonda para 1 casa decimal\nmsg.payload = Math.round(temperatura * 10) / 10;\nmsg.topic = \"temperatura\";\nreturn msg;","outputs":1,"timeout":0,"noerr":0,"initialize":"","finalize":"","libs":[],"x":380,"y":200,"wires":[["2a00000000000003"]]},{"id":"2a00000000000003","type":"switch","name":"Está quente?","property":"payload","propertyType":"msg","rules":[{"t":"gt","v":"30","vt":"num"},{"t":"else"}],"checkall":"true","repair":false,"outputs":2,"x":590,"y":200,"wires":[["2a00000000000004"],["2a00000000000005"]]},{"id":"2a00000000000004","type":"debug","name":"🔥 Quente","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"payload","targetType":"msg","statusVal":"","statusType":"auto","x":780,"y":170,"wires":[]},{"id":"2a00000000000005","type":"debug","name":"✅ Normal","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"payload","targetType":"msg","statusVal":"","statusType":"auto","x":780,"y":230,"wires":[]}]</pre>
+    <div class="actions"><button class="copy" data-copy-from="flow-a2">Copiar fluxo</button></div>
+  </details>
+
+  <div class="challenge">
+    <h4>Desafio</h4>
+    <p>Adicione uma terceira faixa no switch: abaixo de 22 °C vai para um debug chamado <code>❄️ Frio</code>. Dica: a ordem das regras importa, e o “caso contrário” precisa ficar por último.</p>
+  </div>
+
+  <label class="done"><input type="checkbox" data-step="a2"> Concluí esta etapa</label>
+</section>
+
+<!-- ============ ATIVIDADE 3 ============ -->
+<section class="part" id="a3">
+  <div class="part-tag"><i style="background:var(--dash)"></i>Etapa 6</div>
+  <h2>Atividade 3: A página web da estufa</h2>
+  <p><b>Objetivo:</b> fazer o próprio Node-RED virar um <b>site</b>. Ele vai mostrar a temperatura do sensor, um histórico em barras e uma lâmpada com botões de Ligar e Desligar, usando só nós que já vêm no Node-RED, sem instalar nada. Tempo estimado: 35 minutos.</p>
+
+  <h3>Três ideias novas antes de começar</h3>
+  <dl class="terms">
+    <dt>Requisição HTTP</dt><dd>Quando você digita um endereço no navegador, ele <b>pede</b> uma página para um servidor, e o servidor <b>responde</b>. Hoje o servidor vai ser o Node-RED.</dd>
+    <dt>Rota</dt><dd>O final do endereço, como <code>/estufa</code>. Cada rota pode mostrar uma coisa diferente.</dd>
+    <dt>Memória do fluxo</dt><dd>Um “caderninho” onde os nós anotam valores para outros nós lerem depois. <code>flow.set</code> anota; <code>flow.get</code> lê.</dd>
+  </dl>
+
+  <p>Vamos montar <b>três pequenos fluxos</b>, todos <b>na mesma aba</b>. Isso é importante: a memória do fluxo só vale dentro da mesma aba.</p>
+  <div class="flow" aria-label="Fluxo 1: sensor com memória">
+    <span class="fnode c-inject">A cada 2 segundos</span><span class="wire"></span>
+    <span class="fnode c-function">Sensor com memória</span><span class="wire"></span>
+    <span class="fnode c-debug">Temperatura</span>
+  </div>
+  <div class="flow" style="padding-top:0" aria-label="Fluxo 2: página">
+    <span class="fnode c-dash">http in: /estufa</span><span class="wire"></span>
+    <span class="fnode c-function">Prepara os dados</span><span class="wire"></span>
+    <span class="fnode c-function">template: Página HTML</span><span class="wire"></span>
+    <span class="fnode c-dash">http response</span>
+  </div>
+  <div class="flow" style="padding-top:0" aria-label="Fluxo 3: botão da lâmpada">
+    <span class="fnode c-dash">http in: /lampada</span><span class="wire"></span>
+    <span class="fnode c-function">Liga/desliga</span><span class="wire"></span>
+    <span class="fnode c-dash">http response</span>
+  </div>
+
+  <h3>Parte A: o sensor que anota na memória</h3>
+  <ol class="steps">
+    <li>
+      <h4>Crie uma aba nova</h4>
+      <p>Clique no <b>+</b> ao lado das abas. <b>Todos</b> os nós desta atividade vão ficar nela.</p>
+    </li>
+    <li>
+      <h4>Coloque o inject automático</h4>
+      <p>Igual à Atividade 2: arraste um <b>inject</b>, em <b>Repetir</b> escolha <b>intervalo</b> a cada <b>2 segundos</b> e marque <b>Injetar uma vez após 1 segundo</b>. Nome: <code>A cada 2 segundos</code>.</p>
+    </li>
+    <li>
+      <h4>Crie o sensor com memória</h4>
+      <p>Arraste um <b>function</b>, ligue depois do inject, nome <code>Sensor com memória</code>, e cole:</p>
+      <div class="ps"><div class="bar">Código do nó function<button class="copy" data-copy="// 1) Gera uma temperatura aleatória entre 20 e 35 °C&#10;let t = Math.round((20 + Math.random() * 15) * 10) / 10;&#10;msg.payload = t;&#10;&#10;// 2) Guarda a última temperatura na memória do fluxo&#10;flow.set(&quot;temperatura&quot;, t);&#10;&#10;// 3) Guarda as últimas 20 leituras para o histórico&#10;let historico = flow.get(&quot;historico&quot;) || [];&#10;let altura = Math.max(5, Math.round((t - 20) / 15 * 100));&#10;historico.push({ valor: t, altura: altura });&#10;if (historico.length &gt; 20) historico.shift();&#10;flow.set(&quot;historico&quot;, historico);&#10;&#10;return msg;">Copiar</button></div>
+<pre>// 1) Gera uma temperatura aleatória entre 20 e 35 °C
+let t = Math.round((20 + Math.random() * 15) * 10) / 10;
+msg.payload = t;
+
+// 2) Guarda a última temperatura na memória do fluxo
+flow.set("temperatura", t);
+
+// 3) Guarda as últimas 20 leituras para o histórico
+let historico = flow.get("historico") || [];
+let altura = Math.max(5, Math.round((t - 20) / 15 * 100));
+historico.push({ valor: t, altura: altura });
+if (historico.length &gt; 20) historico.shift();
+flow.set("historico", historico);
+
+return msg;</pre></div>
+      <p>Ele faz o mesmo sensor da Atividade 2, mas agora <b>anota</b> a temperatura e as últimas 20 leituras no caderninho do fluxo.</p>
+    </li>
+    <li>
+      <h4>Coloque um debug e implemente</h4>
+      <p>Ligue um <b>debug</b> na saída, nome <code>Temperatura</code>, e clique em <b>Deploy</b>. As temperaturas devem aparecer na aba 🐞.</p>
+    </li>
+  </ol>
+
+  <h3>Parte B: a página web</h3>
+  <ol class="steps">
+    <li>
+      <h4>Crie a rota /estufa (nó http in)</h4>
+      <p>Na busca da paleta, digite <b>http in</b> e arraste o nó (categoria rede). Duplo clique: <b>Método</b> <code>GET</code>, <b>URL</b> <code>/estufa</code>, nome <code>Página /estufa</code>. Concluído.</p>
+      <p>Esse nó fica “esperando” alguém abrir o endereço <code>/estufa</code> no navegador.</p>
+    </li>
+    <li>
+      <h4>Busque os dados na memória</h4>
+      <p>Arraste um <b>function</b>, ligue depois do http in, nome <code>Prepara os dados</code>, e cole:</p>
+      <div class="ps"><div class="bar">Código do nó function<button class="copy" data-copy="// Busca na memória do fluxo o que a página vai mostrar&#10;let t = flow.get(&quot;temperatura&quot;);&#10;msg.temperatura = (t === undefined) ? &quot;--&quot; : t;&#10;msg.quente = t &gt; 30;&#10;msg.historico = flow.get(&quot;historico&quot;) || [];&#10;msg.lampada = flow.get(&quot;lampada&quot;) || &quot;DESLIGADA&quot;;&#10;msg.ligada = (msg.lampada === &quot;LIGADA&quot;);&#10;return msg;">Copiar</button></div>
+<pre>// Busca na memória do fluxo o que a página vai mostrar
+let t = flow.get("temperatura");
+msg.temperatura = (t === undefined) ? "--" : t;
+msg.quente = t &gt; 30;
+msg.historico = flow.get("historico") || [];
+msg.lampada = flow.get("lampada") || "DESLIGADA";
+msg.ligada = (msg.lampada === "LIGADA");
+return msg;</pre></div>
+    </li>
+    <li>
+      <h4>Monte a página (nó template laranja)</h4>
+      <p>Busque <b>template</b>. Desta vez use o <b>laranja</b>, da categoria função. Ligue depois do “Prepara os dados”, dê o nome <code>Página HTML</code>, apague o que tiver no campo <b>Modelo</b> (Template) e cole:</p>
+      <div class="ps"><div class="bar">Código HTML do nó template<button class="copy" data-copy="&lt;!DOCTYPE html&gt;&#10;&lt;html&gt;&#10;&lt;head&gt;&#10;  &lt;meta charset=&quot;utf-8&quot;&gt;&#10;  &lt;meta http-equiv=&quot;refresh&quot; content=&quot;2&quot;&gt;&#10;  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;&#10;  &lt;title&gt;Estufa IoT&lt;/title&gt;&#10;  &lt;style&gt;&#10;    body { font-family: sans-serif; background: #eef1f3; margin: 0; padding: 20px; text-align: center; }&#10;    .card { background: #fff; border-radius: 10px; padding: 20px; margin: 0 auto 16px; max-width: 380px; }&#10;    .temp { font-size: 64px; font-weight: bold; }&#10;    .quente { color: #c62828; }&#10;    .normal { color: #2e7d32; }&#10;    .barras { display: flex; align-items: flex-end; gap: 4px; height: 100px; }&#10;    .barras div { flex: 1; background: #0094ce; border-radius: 3px 3px 0 0; }&#10;    .lampada { font-size: 72px; }&#10;    .apagada { filter: grayscale(1); opacity: 0.3; }&#10;    .acesa { filter: drop-shadow(0 0 18px gold); }&#10;    a.botao { display: inline-block; padding: 10px 18px; margin: 8px 4px 0; border-radius: 6px;&#10;              background: #8f0000; color: #fff; text-decoration: none; }&#10;  &lt;/style&gt;&#10;&lt;/head&gt;&#10;&lt;body&gt;&#10;  &lt;h1&gt;Estufa IoT&lt;/h1&gt;&#10;&#10;  &lt;div class=&quot;card&quot;&gt;&#10;    &lt;div&gt;Temperatura&lt;/div&gt;&#10;    &lt;div class=&quot;temp {{#quente}}quente{{/quente}}{{^quente}}normal{{/quente}}&quot;&gt;{{temperatura}} °C&lt;/div&gt;&#10;    &lt;div&gt;{{#quente}}🔥 Quente{{/quente}}{{^quente}}✅ Normal{{/quente}}&lt;/div&gt;&#10;  &lt;/div&gt;&#10;&#10;  &lt;div class=&quot;card&quot;&gt;&#10;    &lt;div&gt;Histórico (últimas 20 leituras)&lt;/div&gt;&#10;    &lt;div class=&quot;barras&quot;&gt;&#10;      {{#historico}}&lt;div style=&quot;height: {{altura}}%&quot; title=&quot;{{valor}} °C&quot;&gt;&lt;/div&gt;{{/historico}}&#10;    &lt;/div&gt;&#10;  &lt;/div&gt;&#10;&#10;  &lt;div class=&quot;card&quot;&gt;&#10;    &lt;div&gt;Lâmpada da estufa&lt;/div&gt;&#10;    &lt;div class=&quot;lampada {{#ligada}}acesa{{/ligada}}{{^ligada}}apagada{{/ligada}}&quot;&gt;💡&lt;/div&gt;&#10;    &lt;b&gt;{{lampada}}&lt;/b&gt;&lt;br&gt;&#10;    &lt;a class=&quot;botao&quot; href=&quot;/lampada?estado=LIGADA&quot;&gt;Ligar&lt;/a&gt;&#10;    &lt;a class=&quot;botao&quot; href=&quot;/lampada?estado=DESLIGADA&quot;&gt;Desligar&lt;/a&gt;&#10;  &lt;/div&gt;&#10;&lt;/body&gt;&#10;&lt;/html&gt;">Copiar</button></div>
+<pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta http-equiv="refresh" content="2"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Estufa IoT&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: sans-serif; background: #eef1f3; margin: 0; padding: 20px; text-align: center; }
+    .card { background: #fff; border-radius: 10px; padding: 20px; margin: 0 auto 16px; max-width: 380px; }
+    .temp { font-size: 64px; font-weight: bold; }
+    .quente { color: #c62828; }
+    .normal { color: #2e7d32; }
+    .barras { display: flex; align-items: flex-end; gap: 4px; height: 100px; }
+    .barras div { flex: 1; background: #0094ce; border-radius: 3px 3px 0 0; }
+    .lampada { font-size: 72px; }
+    .apagada { filter: grayscale(1); opacity: 0.3; }
+    .acesa { filter: drop-shadow(0 0 18px gold); }
+    a.botao { display: inline-block; padding: 10px 18px; margin: 8px 4px 0; border-radius: 6px;
+              background: #8f0000; color: #fff; text-decoration: none; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Estufa IoT&lt;/h1&gt;
+
+  &lt;div class="card"&gt;
+    &lt;div&gt;Temperatura&lt;/div&gt;
+    &lt;div class="temp {{#quente}}quente{{/quente}}{{^quente}}normal{{/quente}}"&gt;{{temperatura}} °C&lt;/div&gt;
+    &lt;div&gt;{{#quente}}🔥 Quente{{/quente}}{{^quente}}✅ Normal{{/quente}}&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="card"&gt;
+    &lt;div&gt;Histórico (últimas 20 leituras)&lt;/div&gt;
+    &lt;div class="barras"&gt;
+      {{#historico}}&lt;div style="height: {{altura}}%" title="{{valor}} °C"&gt;&lt;/div&gt;{{/historico}}
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="card"&gt;
+    &lt;div&gt;Lâmpada da estufa&lt;/div&gt;
+    &lt;div class="lampada {{#ligada}}acesa{{/ligada}}{{^ligada}}apagada{{/ligada}}"&gt;💡&lt;/div&gt;
+    &lt;b&gt;{{lampada}}&lt;/b&gt;&lt;br&gt;
+    &lt;a class="botao" href="/lampada?estado=LIGADA"&gt;Ligar&lt;/a&gt;
+    &lt;a class="botao" href="/lampada?estado=DESLIGADA"&gt;Desligar&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+      <p>Os trechos entre chaves duplas, como <code>{{temperatura}}</code>, são “buracos” que o Node-RED preenche com os dados da mensagem. A linha <code>meta http-equiv="refresh" content="2"</code> faz a página se atualizar sozinha a cada 2 segundos.</p>
+    </li>
+    <li>
+      <h4>Responda ao navegador (nó http response)</h4>
+      <p>Busque <b>http response</b>, arraste e ligue depois do template. Não precisa configurar nada.</p>
+    </li>
+    <li>
+      <h4>Implemente e abra a página</h4>
+      <p>Clique em <b>Deploy</b> e abra uma <b>nova aba</b> no navegador com o endereço:</p>
+      <div class="ps"><div class="bar">Endereço da página<button class="copy" data-copy="http://127.0.0.1:1880/estufa">Copiar</button></div>
+<pre>http://127.0.0.1:1880/estufa</pre></div>
+      <p>A temperatura e as barras do histórico devem mudar a cada 2 segundos. Os botões ainda não funcionam: isso é a Parte C.</p>
+    </li>
+  </ol>
+
+  <h3>Parte C: os botões da lâmpada</h3>
+  <ol class="steps">
+    <li>
+      <h4>Crie a rota /lampada</h4>
+      <p>Arraste outro <b>http in</b>: <b>Método</b> <code>GET</code>, <b>URL</b> <code>/lampada</code>, nome <code>Botão /lampada</code>.</p>
+    </li>
+    <li>
+      <h4>Anote o estado da lâmpada</h4>
+      <p>Ligue um <b>function</b> depois dele, nome <code>Liga/desliga</code>, e cole:</p>
+      <div class="ps"><div class="bar">Código do nó function<button class="copy" data-copy="// Lê o pedido que veio no endereço: /lampada?estado=LIGADA&#10;let pedido = msg.req.query.estado;&#10;if (pedido === &quot;LIGADA&quot; || pedido === &quot;DESLIGADA&quot;) {&#10;    flow.set(&quot;lampada&quot;, pedido);&#10;}&#10;&#10;// Manda o navegador voltar para a página da estufa&#10;msg.statusCode = 302;&#10;msg.headers = { Location: &quot;/estufa&quot; };&#10;msg.payload = &quot;&quot;;&#10;return msg;">Copiar</button></div>
+<pre>// Lê o pedido que veio no endereço: /lampada?estado=LIGADA
+let pedido = msg.req.query.estado;
+if (pedido === "LIGADA" || pedido === "DESLIGADA") {
+    flow.set("lampada", pedido);
+}
+
+// Manda o navegador voltar para a página da estufa
+msg.statusCode = 302;
+msg.headers = { Location: "/estufa" };
+msg.payload = "";
+return msg;</pre></div>
+    </li>
+    <li>
+      <h4>Responda e teste</h4>
+      <p>Ligue um <b>http response</b> depois do function. Clique em <b>Deploy</b>, volte para a página <code>/estufa</code> e clique em <b>Ligar</b> e <b>Desligar</b>.</p>
+      <div class="note ok"><b class="k">Resultado esperado</b><p>Uma página com a temperatura em letras grandes (vermelha e “🔥 Quente” acima de 30 °C, verde e “✅ Normal” abaixo), barras azuis do histórico se movendo e uma lâmpada 💡 que acende em amarelo ao clicar em Ligar e fica cinza ao clicar em Desligar.</p></div>
+    </li>
+  </ol>
+
+  <div class="note tip">
+    <b class="k">O que acontece quando você clica em Ligar?</b>
+    <p>O botão abre o endereço <code>/lampada?estado=LIGADA</code>. O nó <b>http in /lampada</b> recebe esse pedido, o function anota “LIGADA” na memória e manda o navegador voltar para <code>/estufa</code>. Aí a página é montada de novo, já lendo “LIGADA” da memória. Num projeto real, esse mesmo pedido poderia vir de um ESP32 ou de um app de celular.</p>
+  </div>
+
+  <details class="json">
+    <summary>Ver o fluxo pronto da Atividade 3</summary>
+<pre id="flow-a3">[{"id":"3b00000000000001","type":"inject","name":"A cada 2 segundos","props":[{"p":"payload"}],"repeat":"2","crontab":"","once":true,"onceDelay":"1","topic":"","payload":"","payloadType":"date","x":160,"y":80,"wires":[["3b00000000000002"]]},{"id":"3b00000000000002","type":"function","name":"Sensor com memória","func":"// 1) Gera uma temperatura aleatória entre 20 e 35 °C\nlet t = Math.round((20 + Math.random() * 15) * 10) / 10;\nmsg.payload = t;\n\n// 2) Guarda a última temperatura na memória do fluxo\nflow.set(\"temperatura\", t);\n\n// 3) Guarda as últimas 20 leituras para o histórico\nlet historico = flow.get(\"historico\") || [];\nlet altura = Math.max(5, Math.round((t - 20) / 15 * 100));\nhistorico.push({ valor: t, altura: altura });\nif (historico.length &gt; 20) historico.shift();\nflow.set(\"historico\", historico);\n\nreturn msg;","outputs":1,"timeout":0,"noerr":0,"initialize":"","finalize":"","libs":[],"x":380,"y":80,"wires":[["3b00000000000003"]]},{"id":"3b00000000000003","type":"debug","name":"Temperatura","active":false,"tosidebar":true,"console":false,"tostatus":true,"complete":"payload","targetType":"msg","statusVal":"payload","statusType":"auto","x":590,"y":80,"wires":[]},{"id":"3b00000000000004","type":"http in","name":"Página /estufa","url":"/estufa","method":"get","upload":false,"swaggerDoc":"","x":150,"y":180,"wires":[["3b00000000000005"]]},{"id":"3b00000000000005","type":"function","name":"Prepara os dados","func":"// Busca na memória do fluxo o que a página vai mostrar\nlet t = flow.get(\"temperatura\");\nmsg.temperatura = (t === undefined) ? \"--\" : t;\nmsg.quente = t &gt; 30;\nmsg.historico = flow.get(\"historico\") || [];\nmsg.lampada = flow.get(\"lampada\") || \"DESLIGADA\";\nmsg.ligada = (msg.lampada === \"LIGADA\");\nreturn msg;","outputs":1,"timeout":0,"noerr":0,"initialize":"","finalize":"","libs":[],"x":360,"y":180,"wires":[["3b00000000000006"]]},{"id":"3b00000000000006","type":"template","name":"Página HTML","field":"payload","fieldType":"msg","format":"html","syntax":"mustache","template":"&lt;!DOCTYPE html&gt;\n&lt;html&gt;\n&lt;head&gt;\n  &lt;meta charset=\"utf-8\"&gt;\n  &lt;meta http-equiv=\"refresh\" content=\"2\"&gt;\n  &lt;meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"&gt;\n  &lt;title&gt;Estufa IoT&lt;/title&gt;\n  &lt;style&gt;\n    body { font-family: sans-serif; background: #eef1f3; margin: 0; padding: 20px; text-align: center; }\n    .card { background: #fff; border-radius: 10px; padding: 20px; margin: 0 auto 16px; max-width: 380px; }\n    .temp { font-size: 64px; font-weight: bold; }\n    .quente { color: #c62828; }\n    .normal { color: #2e7d32; }\n    .barras { display: flex; align-items: flex-end; gap: 4px; height: 100px; }\n    .barras div { flex: 1; background: #0094ce; border-radius: 3px 3px 0 0; }\n    .lampada { font-size: 72px; }\n    .apagada { filter: grayscale(1); opacity: 0.3; }\n    .acesa { filter: drop-shadow(0 0 18px gold); }\n    a.botao { display: inline-block; padding: 10px 18px; margin: 8px 4px 0; border-radius: 6px;\n              background: #8f0000; color: #fff; text-decoration: none; }\n  &lt;/style&gt;\n&lt;/head&gt;\n&lt;body&gt;\n  &lt;h1&gt;Estufa IoT&lt;/h1&gt;\n\n  &lt;div class=\"card\"&gt;\n    &lt;div&gt;Temperatura&lt;/div&gt;\n    &lt;div class=\"temp {{#quente}}quente{{/quente}}{{^quente}}normal{{/quente}}\"&gt;{{temperatura}} °C&lt;/div&gt;\n    &lt;div&gt;{{#quente}}🔥 Quente{{/quente}}{{^quente}}✅ Normal{{/quente}}&lt;/div&gt;\n  &lt;/div&gt;\n\n  &lt;div class=\"card\"&gt;\n    &lt;div&gt;Histórico (últimas 20 leituras)&lt;/div&gt;\n    &lt;div class=\"barras\"&gt;\n      {{#historico}}&lt;div style=\"height: {{altura}}%\" title=\"{{valor}} °C\"&gt;&lt;/div&gt;{{/historico}}\n    &lt;/div&gt;\n  &lt;/div&gt;\n\n  &lt;div class=\"card\"&gt;\n    &lt;div&gt;Lâmpada da estufa&lt;/div&gt;\n    &lt;div class=\"lampada {{#ligada}}acesa{{/ligada}}{{^ligada}}apagada{{/ligada}}\"&gt;💡&lt;/div&gt;\n    &lt;b&gt;{{lampada}}&lt;/b&gt;&lt;br&gt;\n    &lt;a class=\"botao\" href=\"/lampada?estado=LIGADA\"&gt;Ligar&lt;/a&gt;\n    &lt;a class=\"botao\" href=\"/lampada?estado=DESLIGADA\"&gt;Desligar&lt;/a&gt;\n  &lt;/div&gt;\n&lt;/body&gt;\n&lt;/html&gt;","output":"str","x":560,"y":180,"wires":[["3b00000000000007"]]},{"id":"3b00000000000007","type":"http response","name":"Responde","statusCode":"","headers":{},"x":740,"y":180,"wires":[]},{"id":"3b00000000000008","type":"http in","name":"Botão /lampada","url":"/lampada","method":"get","upload":false,"swaggerDoc":"","x":150,"y":260,"wires":[["3b00000000000009"]]},{"id":"3b00000000000009","type":"function","name":"Liga/desliga","func":"// Lê o pedido que veio no endereço: /lampada?estado=LIGADA\nlet pedido = msg.req.query.estado;\nif (pedido === \"LIGADA\" || pedido === \"DESLIGADA\") {\n    flow.set(\"lampada\", pedido);\n}\n\n// Manda o navegador voltar para a página da estufa\nmsg.statusCode = 302;\nmsg.headers = { Location: \"/estufa\" };\nmsg.payload = \"\";\nreturn msg;","outputs":1,"timeout":0,"noerr":0,"initialize":"","finalize":"","libs":[],"x":360,"y":260,"wires":[["3b0000000000000a"]]},{"id":"3b0000000000000a","type":"http response","name":"Responde","statusCode":"","headers":{},"x":560,"y":260,"wires":[]}]</pre>
+    <div class="actions"><button class="copy" data-copy-from="flow-a3">Copiar fluxo</button></div>
+  </details>
+
+  <div class="challenge">
+    <h4>Desafio: mostrar ❄️ Frio</h4>
+    <p>Faça a página mostrar <b>❄️ Frio</b> quando a temperatura estiver abaixo de 22 °C. Dica: no “Prepara os dados”, crie <code>msg.frio = t &lt; 22;</code>. No template, use <code>{{#frio}}❄️ Frio{{/frio}}</code>, do mesmo jeito que o <code>{{#quente}}</code> já faz. Cuidado para não aparecer “Frio” e “Normal” ao mesmo tempo!</p>
+  </div>
+
+  <label class="done"><input type="checkbox" data-step="a3"> Concluí esta etapa</label>
+</section>
+
+<!-- ============ ENTREGA ============ -->
+<section class="part" id="entrega">
+  <div class="part-tag"><i style="background:#C7C7C7"></i>Etapa 7</div>
+  <h2>Questões e entrega no Teams</h2>
+  <p>Para finalizar, você vai montar <b>um arquivo</b> com os prints das atividades concluídas e as respostas das 10 questões, e entregar na tarefa do Teams.</p>
+
+  <h3>As 10 questões</h3>
+  <p>Responda com suas palavras, em frases completas. Não precisa ser longo: de 2 a 5 linhas por questão está ótimo.</p>
+  <ol class="questions">
+    <li>Com suas palavras, o que é o Node-RED e por que ele é útil em projetos de IoT?</li>
+    <li>Explique a diferença entre <b>nó</b>, <b>fio</b> e <b>fluxo</b>. Use a Atividade 1 como exemplo.</li>
+    <li>O que é o <code>msg.payload</code>? Na Atividade 1, qual era o valor dele <b>antes</b> e <b>depois</b> de passar pelo nó function?</li>
+    <li>Para que serve o botão <b>Implementar/Deploy</b>? O que acontece se você mudar a configuração de um nó e não clicar nele?</li>
+    <li>O que é um <b>contêiner</b> do Docker? No comando <code>docker run</code> que usamos, para que servem as partes <code>-p 1880:1880</code> e <code>-v node_red_data:/data</code>?</li>
+    <li>Na Atividade 2, por que usamos um sensor <b>simulado</b>? Qual é a função do nó <b>switch</b> nesse fluxo?</li>
+    <li>Na Atividade 2, o que você mudaria para o alerta de “Quente” começar em 28 °C? E o que aconteceria se a regra “caso contrário” fosse colocada em primeiro lugar?</li>
+    <li>Na Atividade 3, a página não recebe a temperatura por um fio vindo do sensor: ela lê da <b>memória do fluxo</b>. Explique com suas palavras o que fazem o <code>flow.set</code> e o <code>flow.get</code>, e por que todos os nós precisaram ficar na mesma aba.</li>
+    <li>Descreva, passo a passo, o que acontece desde o momento em que você clica no botão <b>Ligar</b> até a lâmpada aparecer acesa na página. Cite os nós por onde a informação passa.</li>
+    <li>Pense em um problema real (em casa, na escola, no trabalho ou no seu bairro) que poderia ser resolvido com Node-RED. Descreva: qual <b>sensor</b> você usaria, qual <b>regra</b> o fluxo seguiria, o que apareceria no <b>painel</b> e qual <b>ação</b> seria tomada.</li>
+  </ol>
+  <p><button class="copy copy-dark" data-copy-from="questoes-texto">Copiar as questões</button> <span class="muted">Copia as 10 questões já com espaço para “Resposta:”, para colar no seu arquivo.</span></p>
+  <pre id="questoes-texto" hidden>QUESTÕES – NODE-RED NA PRÁTICA
+
+1. Com suas palavras, o que é o Node-RED e por que ele é útil em projetos de IoT?
+Resposta:
+
+
+2. Explique a diferença entre nó, fio e fluxo. Use a Atividade 1 como exemplo.
+Resposta:
+
+
+3. O que é o msg.payload? Na Atividade 1, qual era o valor dele antes e depois de passar pelo nó function?
+Resposta:
+
+
+4. Para que serve o botão Implementar/Deploy? O que acontece se você mudar a configuração de um nó e não clicar nele?
+Resposta:
+
+
+5. O que é um contêiner do Docker? No comando docker run que usamos, para que servem as partes -p 1880:1880 e -v node_red_data:/data?
+Resposta:
+
+
+6. Na Atividade 2, por que usamos um sensor simulado? Qual é a função do nó switch nesse fluxo?
+Resposta:
+
+
+7. Na Atividade 2, o que você mudaria para o alerta de “Quente” começar em 28 °C? E o que aconteceria se a regra “caso contrário” fosse colocada em primeiro lugar?
+Resposta:
+
+
+8. Na Atividade 3, a página não recebe a temperatura por um fio vindo do sensor: ela lê da memória do fluxo. Explique com suas palavras o que fazem o flow.set e o flow.get, e por que todos os nós precisaram ficar na mesma aba.
+Resposta:
+
+
+9. Descreva, passo a passo, o que acontece desde o momento em que você clica no botão Ligar até a lâmpada aparecer acesa na página. Cite os nós por onde a informação passa.
+Resposta:
+
+
+10. Pense em um problema real (em casa, na escola, no trabalho ou no seu bairro) que poderia ser resolvido com Node-RED. Descreva: qual sensor você usaria, qual regra o fluxo seguiria, o que apareceria no painel e qual ação seria tomada.
+Resposta:
+</pre>
+
+  <h3>Como montar o arquivo</h3>
+  <ol class="steps">
+    <li>
+      <h4>Crie o documento</h4>
+      <p>Abra o <b>Word</b> (ou o Word pelo próprio Teams/Office online) e crie um documento em branco. No topo, escreva seu <b>nome completo</b>, sua <b>turma</b> e a <b>data</b>.</p>
+      <p>Salve com o nome no formato <code>NodeRED_NomeSobrenome_Turma</code>, por exemplo <code>NodeRED_AnaSouza_3A</code>.</p>
+    </li>
+    <li>
+      <h4>Parte 1: cole os prints das etapas concluídas</h4>
+      <p>Escreva um título antes de cada print, para o professor saber o que é:</p>
+      <ul>
+        <li><b>Docker:</b> o PowerShell mostrando o resultado de <code>docker ps</code>, com o <i>meu-node-red</i> ligado.</li>
+        <li><b>Atividade 1:</b> o fluxo no editor e a aba 🐞 mostrando <code>"OLÁ, IOT!"</code>.</li>
+        <li><b>Atividade 2:</b> o fluxo no editor e a aba 🐞 com mensagens de <b>🔥 Quente</b> e de <b>✅ Normal</b>.</li>
+        <li><b>Atividade 3:</b> os três fluxos no editor e a página <code>/estufa</code> aberta no navegador, com a lâmpada <b>acesa</b>.</li>
+      </ul>
+    </li>
+    <li>
+      <h4>Parte 2: cole as questões e responda</h4>
+      <p>Clique no botão <b>Copiar as questões</b> (acima), cole no documento e escreva suas respostas embaixo de cada “Resposta:”.</p>
+    </li>
+    <li>
+      <h4>Salve como PDF</h4>
+      <p>No Word: <b>Arquivo</b> → <b>Salvar como</b> → no tipo, escolha <b>PDF</b> → <b>Salvar</b>. O PDF abre igual em qualquer computador, sem bagunçar os prints.</p>
+    </li>
+    <li>
+      <h4>Exporte seus fluxos (recomendado)</h4>
+      <p>No Node-RED: menu <b>☰</b> → <b>Exportar</b> → escolha <b>todos os fluxos</b> → <b>Baixar</b>. Vai ser salvo um arquivo <code>flows.json</code> na pasta Downloads. Ele também serve de backup: se o computador do laboratório for apagado, você importa esse arquivo e recupera tudo.</p>
+    </li>
+  </ol>
+
+  <label class="done"><input type="checkbox" data-step="entrega"> Entreguei a atividade no Teams</label>
+</section>
+
+<section class="part" id="proximos">
+  <h2>Para onde ir depois</h2>
+  <p>Você montou o caminho completo de um sistema de IoT: <b>dado chega → regra decide → painel mostra → usuário controla</b>. Nas próximas aulas, o sensor de mentirinha vai virar um sensor de verdade:</p>
+  <ul>
+    <li><b>MQTT</b>: o “correio” da IoT, usado para placas como o ESP32 mandarem dados para o Node-RED pela rede (nós <i>mqtt in</i> e <i>mqtt out</i>).</li>
+    <li><b>ESP32 + sensor DHT11/DHT22</b>: medir temperatura e umidade reais.</li>
+    <li><b>Alertas</b>: mandar mensagem no Telegram quando a estufa esquentar demais.</li>
+  </ul>
+  <p>Material oficial (em inglês): <a href="https://nodered.org/docs/" target="_blank" rel="noopener">nodered.org/docs</a> e <a href="https://dashboard.flowfuse.com/" target="_blank" rel="noopener">dashboard.flowfuse.com</a>.</p>
+</section>
+
+</main>
+
+<footer>Aula-atividade de Node-RED para IoT.</footer>
+
+<script>
+(function(){
+  var STEPS = [
+    {id:"oque",     label:"O que é",         color:"#A6BBCF", icon:"?"},
+    {id:"instalar", label:"Instalar",        color:"#FDD0A2", icon:"⤓"},
+    {id:"tela",     label:"Conhecer a tela", color:"#E2D96E", icon:"▣"},
+    {id:"a1",       label:"Atividade 1",     color:"#87A980", icon:"1"},
+    {id:"a2",       label:"Atividade 2",     color:"#87A980", icon:"2"},
+    {id:"a3",       label:"Atividade 3",     color:"#9DD5E8", icon:"3"},
+    {id:"entrega",  label:"Entrega",         color:"#C7C7C7", icon:"✓"}
+  ];
+  var KEY = "nodered-aula-progresso";
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("flowSvg");
+  var W = 150, H = 40, STEP_X = 172;
+
+  function el(tag, attrs, parent){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function pos(i){ return {x: 20 + i*STEP_X, y: (i % 2 === 0) ? 28 : 98}; }
+
+  // fios primeiro (ficam atrás dos nós)
+  for (var i = 0; i < STEPS.length - 1; i++){
+    var a = pos(i), b = pos(i+1);
+    var x1 = a.x + W, y1 = a.y + H/2, x2 = b.x, y2 = b.y + H/2;
+    el("path", {d:"M"+x1+" "+y1+" C"+(x1+45)+" "+y1+", "+(x2-45)+" "+y2+", "+x2+" "+y2,
+      fill:"none", stroke:"#888", "stroke-width":"3"}, svg);
+  }
+
+  STEPS.forEach(function(s, i){
+    var p = pos(i);
+    var a = el("a", {href:"#"+s.id, class:"fn-node", "aria-label":s.label}, svg);
+    el("rect", {class:"body", x:p.x, y:p.y, width:W, height:H, rx:5, fill:s.color}, a);
+    el("path", {d:"M"+(p.x+5)+" "+p.y+" h21 v"+H+" h-21 a5 5 0 0 1 -5 -5 v-"+(H-10)+" a5 5 0 0 1 5 -5 z", fill:"rgba(0,0,0,.07)"}, a);
+    el("line", {x1:p.x+26, y1:p.y, x2:p.x+26, y2:p.y+H, stroke:"rgba(0,0,0,.12)"}, a);
+    var ic = el("text", {x:p.x+13, y:p.y+25, "text-anchor":"middle", style:"font-weight:700"}, a);
+    ic.textContent = s.icon;
+    var t = el("text", {x:p.x+36, y:p.y+25}, a);
+    t.textContent = s.label;
+    if (i > 0) el("rect", {x:p.x-5, y:p.y+15, width:10, height:10, rx:3, fill:"#d9d9d9", stroke:"#999"}, a);
+    if (i < STEPS.length-1) el("rect", {x:p.x+W-5, y:p.y+15, width:10, height:10, rx:3, fill:"#d9d9d9", stroke:"#999"}, a);
+    var st = el("g", {class:"fn-status", id:"st-"+s.id}, svg);
+    el("rect", {x:p.x+4, y:p.y+H+8, width:9, height:9, rx:2, fill:"#3E8E41"}, st);
+    var stt = el("text", {x:p.x+18, y:p.y+H+17, style:"font-size:13px;fill:#3E8E41"}, st);
+    stt.textContent = "concluído";
+  });
+
+  // progresso salvo no navegador
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } }
+  function save(d){ try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e){} }
+  var data = load();
+
+  function render(){
+    var n = 0;
+    STEPS.forEach(function(s){
+      var on = !!data[s.id]; if (on) n++;
+      var g = document.getElementById("st-"+s.id); if (g) g.classList.toggle("on", on);
+    });
+    document.getElementById("progText").textContent = n + " de " + STEPS.length + " etapas";
+    document.getElementById("progBar").style.width = (n / STEPS.length * 100) + "%";
+  }
+  document.querySelectorAll("label.done input").forEach(function(cb){
+    cb.checked = !!data[cb.dataset.step];
+    cb.addEventListener("change", function(){ data[cb.dataset.step] = cb.checked; save(data); render(); });
+  });
+  render();
+
+  // botões de copiar
+  function copyText(text, btn){
+    var done = function(){
+      var old = btn.textContent; btn.textContent = "Copiado!"; btn.classList.add("done");
+      setTimeout(function(){ btn.textContent = old; btn.classList.remove("done"); }, 1600);
+    };
+    if (navigator.clipboard && window.isSecureContext){
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(text); done(); });
+    } else { fallback(text); done(); }
+  }
+  function fallback(text){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta);
+  }
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var text = btn.dataset.copyFrom
+        ? document.getElementById(btn.dataset.copyFrom).textContent
+        : btn.dataset.copy;
+      copyText(text, btn);
+    });
+  });
+})();
+</script>
+</body>
+</html>
